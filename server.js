@@ -6,6 +6,7 @@ const helmet = require( 'helmet');
 const corsOptions = require('./config/corsOptions');
 const path = require('path')
 const PORT = process.env.PORT || 3500;
+const pool = require('./config/dbConn');
 
 //set up express server
 const app = express();
@@ -22,18 +23,26 @@ app.use('/', require('./routes/root'));
 
 //404 for all other non-specified routes
 app.all('*', (req, res)=>{
-    res.status(404)
+    res.status(404);
     if(req.accepts('html')){
-        res.sendFile(path.join(__dirname, 'views', '404.html'))
+        res.sendFile(path.join(__dirname, 'views', '404.html'));
     } else if (req.accepts('json')){
-        res.json({message: '404 Not Found'})
+        res.json({message: '404 Not Found'});
     } else {
-        res.type('txt').send('404 Not Found')
+        res.type('txt').send('404 Not Found');
     }
 });
 
-
-app.listen(PORT, ()=>{
-    console.log(`Server is up and listening on port ${PORT}`);
+pool.getConnection((err, connection)=>{
+    if(err instanceof Error){
+        console.log('pool.getConnection error:', err);
+        return;
+    }
 });
 
+pool.addListener("connection", ()=>{
+    console.log('Connected to DB');
+    app.listen(PORT, ()=>{
+        console.log(`Listening on PORT ${PORT}`)
+    })
+})
