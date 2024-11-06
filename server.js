@@ -9,6 +9,7 @@ const path = require('path')
 const PORT = process.env.PORT || 3500;
 const pool = require('./config/dbConn');
 const {logEvents, assignDateTime, assignId, inReqLogStream} = require('./middleware/logger');
+const errorHandler = require('./middleware/errorHandler');
 
 //set up express server
 const app = express();
@@ -17,11 +18,12 @@ const app = express();
 console.log(process.env.NODE_ENV)
 
 //middleware
-app.use(helmet());
-app.use(cors(corsOptions));
 app.use(assignDateTime);
 app.use(assignId);
 app.use(morgan(':date :id :remote-addr - :remote-user :method :url :status - :response-time ms :referrer :user-agent', {stream: inReqLogStream}));
+app.use(cors(corsOptions));
+app.use(helmet());
+app.use(express.json())
 
 //public accessed files
 app.use('/', express.static(path.join(__dirname, 'public')));
@@ -40,6 +42,8 @@ app.all('*', (req, res)=>{
         res.type('txt').send('404 Not Found');
     }
 });
+
+app.use(errorHandler);
 
 pool.getConnection((err, connection)=>{
     if(err instanceof Error){
