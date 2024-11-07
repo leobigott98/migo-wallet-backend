@@ -8,8 +8,10 @@ const corsOptions = require('./config/corsOptions');
 const path = require('path')
 const PORT = process.env.PORT || 3500;
 const pool = require('./config/dbConn');
-const {logEvents, assignDateTime, assignId, inReqLogStream} = require('./middleware/logger');
+const {logEvents, assignDateTime, assignId} = require('./middleware/logger');
 const errorHandler = require('./middleware/errorHandler');
+const {resBodyFormat, reqResBodyFormat} = require('./config/morganFormats');
+const {inReqOptions, getMethodOptions} = require('./config/morganOptions');
 
 //set up express server
 const app = express();
@@ -18,12 +20,13 @@ const app = express();
 console.log(process.env.NODE_ENV)
 
 //middleware
+app.use(express.json())
 app.use(assignDateTime);
 app.use(assignId);
-app.use(morgan(':date :id :remote-addr - :remote-user :method :url :status - :response-time ms :referrer :user-agent', {stream: inReqLogStream}));
+app.use(morgan(reqResBodyFormat, inReqOptions));
+app.use(morgan(resBodyFormat, getMethodOptions));
 app.use(cors(corsOptions));
 app.use(helmet());
-app.use(express.json())
 
 //public accessed files
 app.use('/', express.static(path.join(__dirname, 'public')));
