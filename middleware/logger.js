@@ -13,12 +13,15 @@ morgan.token("date", function getDate(req) {
   return req.dateTime;
 });
 
-morgan.token("reqBody", function getReqBody(req) {
+morgan.token("reqBody", function getReqBody(req, res) {
   return JSON.stringify(req.body);
 });
 
-morgan.token("resBody", function getResBody(res) {
-  return JSON.stringify(res.body);
+morgan.token('resBody', function (req, res) {
+  if (res['statusCode'] != 200) {
+      return res['__custombody__'] || null;
+  }
+  return null;
 });
 
 const logEvents = async (message, logFileName) => {
@@ -48,4 +51,25 @@ const assignId = (req, res, next) => {
   next();
 };
 
-module.exports = { logEvents, assignDateTime, assignId };
+const setResponseBody = (req, res, next) => {
+  const oldWrite = res.write,
+      oldEnd = res.end,
+      chunks = [];
+
+  res.write = function (chunk) {
+      chunks.push(Buffer.from(chunk));
+      oldWrite.apply(res, arguments);
+  };
+
+  res.end = function (chunk) {
+      if (chunk) {
+          chunks.push(Buffer.from(chunk));
+      }
+      const body = Buffer.concat(chunks).toString('utf8');
+      res.__custombody__ = body;
+      oldEnd.apply(res, arguments);
+  };
+  next();
+};
+
+module.exports = { logEvents, assignDateTime, assignId, setResponseBody };

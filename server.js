@@ -8,9 +8,9 @@ const corsOptions = require('./config/corsOptions');
 const path = require('path')
 const PORT = process.env.PORT || 3500;
 const pool = require('./config/dbConn');
-const {logEvents, assignDateTime, assignId} = require('./middleware/logger');
+const {logEvents, assignDateTime, assignId, setResponseBody} = require('./middleware/logger');
 const errorHandler = require('./middleware/errorHandler');
-const {resBodyFormat, reqResBodyFormat} = require('./config/morganFormats');
+const {resBodyFormat, reqResBodyFormat, reqBodyFormat} = require('./config/morganFormats');
 const {inReqOptions, getMethodOptions} = require('./config/morganOptions');
 
 //set up express server
@@ -23,8 +23,9 @@ console.log(process.env.NODE_ENV)
 app.use(express.json())
 app.use(assignDateTime);
 app.use(assignId);
-app.use(morgan(reqResBodyFormat, inReqOptions));
-app.use(morgan(resBodyFormat, getMethodOptions));
+app.use(setResponseBody);
+app.use(morgan(reqBodyFormat, inReqOptions));
+//app.use(morgan(resBodyFormat, getMethodOptions));
 app.use(cors(corsOptions));
 app.use(helmet());
 
@@ -33,6 +34,9 @@ app.use('/', express.static(path.join(__dirname, 'public')));
 
 //index
 app.use('/', require('./routes/root'));
+
+//pago movil
+app.use('/pago-movil', require('./routes/pagoMovilRoutes'))
 
 //404 for all other non-specified routes
 app.all('*', (req, res)=>{
@@ -46,7 +50,7 @@ app.all('*', (req, res)=>{
     }
 });
 
-app.use(errorHandler);
+app.use(morgan(reqResBodyFormat, inReqOptions));
 
 pool.getConnection((err, connection)=>{
     if(err instanceof Error){

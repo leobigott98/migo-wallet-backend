@@ -6,4 +6,4 @@ const reqBodyFormat = basicRequestFormat + '\tReq: :reqBody';
 
 const resBodyFormat = basicRequestFormat + '\tRes: :resBody';
 
-module.exports = {reqResBodyFormat, basicRequestFormat, resBodyFormat};
+module.exports = {reqResBodyFormat, basicRequestFormat, resBodyFormat, reqBodyFormat};

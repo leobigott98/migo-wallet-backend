@@ -14,9 +14,9 @@ const inReqLogStream = fs.createWriteStream(path.join(__dirname, '..', 'logs', '
 
 const inReqOptions = {
     stream: inReqLogStream,
-    skip: function (req, res) {
+    /* skip: function (req, res) {
         return req.method == 'GET'
-    }
+    } */
 }
 
 const getMethodOptions = {
