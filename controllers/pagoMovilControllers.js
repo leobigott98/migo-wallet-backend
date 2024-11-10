@@ -1,8 +1,7 @@
 const axios = require('axios');
 const asyncHandler = require('express-async-handler');
 const {logEvents} = require('../middleware/logger');
-
-var authToken = 'd6b457bb-804a-30d2-a895-84afa09b611a';
+const {savePMToken, getToken} = require('../cache/pagoMovilToken'); 
 
 const instance = axios.create({
     baseURL: process.env.BANK_URL,
@@ -12,24 +11,34 @@ const instance = axios.create({
 // @desc Authenticates with the bank
 // @route GET /token
 // @access Private
-const getToken = asyncHandler(async (req, res)=>{
+const authenticate = asyncHandler(async ()=>{
+    console.log('attempting authentication')
     const data = {
         grant_type: 'client_credentials'
     }
     const urlEncoded = new URLSearchParams(Object.entries(data)).toString();
-    const response = await instance.post(process.env.PM_TOKEN_URL, urlEncoded, {
-        auth: {
-            username: process.env.BANK_USERNAME,
-            password: process.env.BANK_PASSWORD
-        },
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+    try{
+        const response = await instance.post(process.env.PM_TOKEN_URL, urlEncoded, {
+            auth: {
+                username: process.env.BANK_USERNAME,
+                password: process.env.BANK_PASSWORD
+            },
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        })
+        console.log('sent request');
+        console.log(response);
+        logEvents(`reqId: ${req.id} \treqURL: ${process.env.PM_TOKEN_URL} \treqBody: ${JSON.stringify(data)} \tresData: ${JSON.stringify(response.data)}`, 'pagoMovilLog.log')
+        if(response.status == 200){
+            const authToken = response.data.access_token;
+            await savePMToken(authToken);
+            return authToken;
         }
-    })
-    logEvents(`reqId: ${req.id} \treqURL: ${process.env.PM_TOKEN_URL} \treqBody: ${JSON.stringify(data)} \tresData: ${JSON.stringify(response.data)}`, 'pagoMovilLog.log')
-    if(response.status == 200){
-        authToken = response.data.access_token;
-        res.status(200).json({message: "success", token: authToken})
+        else throw new Error(`status: ${response.status} \tmessage: ${response.data}`)
+    }catch(err){
+        logEvents(`Error authenticating with Pago Movil: ${err}`, 'pagoMovilErrorLog.log')
+        console.log('There was an error authenticating with Pago Movil')
     }
 })
 
@@ -37,17 +46,22 @@ const getToken = asyncHandler(async (req, res)=>{
 // @route GET /listarBancos
 // @access Private
 const getAllBanks = asyncHandler(async(req, res)=>{
+    let token = await getToken();
+    if(!token){
+        token = await authenticate();
+    }
+
     const data = {
         requestListar: {
             canal: 1,
-            identificadorExterno: authToken,
+            identificadorExterno: token,
             terminal: process.env.PM_LISTARBANCOS_TERMINAL,
             tipoLista: process.env.PM_LISTARBANCOS_TIPOLISTA
         }
     }
     const response = await instance.post(process.env.PM_LISTARBANCOS_URL, data, {
         headers: {
-            'Authorization': `Bearer ${authToken}` 
+            'Authorization': `Bearer ${token}` 
         }
     })
     //log the response
@@ -62,6 +76,11 @@ const getAllBanks = asyncHandler(async(req, res)=>{
 // @route GET /token
 // @access Private
 const queryPaymentB2P = asyncHandler(async (req, res)=>{
+    let token = await getToken();
+    if(!token){
+        token = await authenticate();
+    }
+
     const {ci, tlf, ref, monto, fecha} = req.body
     const data = {
         rif: process.env.PM_PUNTOGO_RIF,
@@ -75,7 +94,7 @@ const queryPaymentB2P = asyncHandler(async (req, res)=>{
     }
     const response = await instance.post(process.env.PM_QUERYPAYMENTB2P_URL, data, {
         headers: {
-            'Authorization': `Bearer ${authToken}` 
+            'Authorization': `Bearer ${token}` 
         }
     })
     //log the response
@@ -90,11 +109,16 @@ const queryPaymentB2P = asyncHandler(async (req, res)=>{
 // @route GET /token
 // @access Private
 const C2P = asyncHandler(async (req, res)=>{
+    let token = await getToken();
+    if(!token){
+        token = await authenticate();
+    }
+
     const {ci, tlf, otp, banco, monto} = req.body
     const data = {
         request:
             {
-                identificadorExterno: authToken,
+                identificadorExterno: token,
                 direccionInternet: req.ip? req.ip : "10.100.49.91",
                 rif: process.env.PM_PUNTOGO_RIF,
                 telefonoCredito: process.env.PM_PUNTOGO_TLF,
@@ -118,7 +142,7 @@ const C2P = asyncHandler(async (req, res)=>{
     }
     const response = await instance.post(process.env.PM_C2P_URL, data, {
         headers: {
-            'Authorization': `Bearer ${authToken}` 
+            'Authorization': `Bearer ${token}` 
         }
     })
     //log the response
@@ -133,6 +157,11 @@ const C2P = asyncHandler(async (req, res)=>{
 // @route GET /token
 // @access Private
 const sendPaymentB2P = asyncHandler(async (req, res)=>{
+    let token = await getToken();
+    if(!token){
+        token = await authenticate();
+    }
+
     const {ci, tlf, banco, monto} = req.body
     const data = {
             direccionInternet: req.ip? req.ip : "10.0.5.123",
@@ -157,7 +186,7 @@ const sendPaymentB2P = asyncHandler(async (req, res)=>{
     try{
         const response = await instance.post(process.env.PM_SENDPAYMENTB2P_URL, data, {
             headers: {
-                'Authorization': `Bearer ${authToken}` 
+                'Authorization': `Bearer ${token}` 
             }
         })
         //log the response
@@ -177,7 +206,6 @@ const sendPaymentB2P = asyncHandler(async (req, res)=>{
 })
 
 module.exports = {
-    getToken,
     getAllBanks,
     queryPaymentB2P,
     C2P,

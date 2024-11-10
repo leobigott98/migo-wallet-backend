@@ -2,9 +2,6 @@ const express = require('express')
 const router = express.Router()
 const pagoMovilControllers = require('../controllers/pagoMovilControllers')
 
-router.route('/token')
-    .get(pagoMovilControllers.getToken)
-
 router.route('/listarBancos')
     .get(pagoMovilControllers.getAllBanks)
 
