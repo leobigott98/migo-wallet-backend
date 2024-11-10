@@ -36,7 +36,10 @@ app.use('/', express.static(path.join(__dirname, 'public')));
 app.use('/', require('./routes/root'));
 
 //pago movil
-app.use('/pago-movil', require('./routes/pagoMovilRoutes'))
+app.use('/pago-movil', require('./routes/pagoMovilRoutes'));
+
+//credicard
+app.use('/credicard', require('./routes/credicardRoutes'));
 
 //404 for all other non-specified routes
 app.all('*', (req, res)=>{

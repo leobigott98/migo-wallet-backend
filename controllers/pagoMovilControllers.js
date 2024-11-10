@@ -9,10 +9,8 @@ const instance = axios.create({
 })
 
 // @desc Authenticates with the bank
-// @route GET /token
-// @access Private
 const authenticate = asyncHandler(async ()=>{
-    console.log('attempting authentication')
+    console.log('attempting PM authentication')
     const data = {
         grant_type: 'client_credentials'
     }
@@ -28,7 +26,6 @@ const authenticate = asyncHandler(async ()=>{
             }
         })
         console.log('sent auth request');
-        console.log(response);
         logEvents(`reqURL: ${process.env.PM_TOKEN_URL} \treqBody: ${JSON.stringify(data)} \tresData: ${JSON.stringify(response.data)}`, 'pagoMovilLog.log')
         if(response.status == 200){
             const authToken = response.data.access_token;
