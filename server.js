@@ -9,9 +9,11 @@ const path = require('path')
 const PORT = process.env.PORT || 3500;
 const pool = require('./config/dbConn');
 const {logEvents, assignDateTime, assignId, setResponseBody} = require('./middleware/logger');
-const errorHandler = require('./middleware/errorHandler');
-const {resBodyFormat, reqResBodyFormat, reqBodyFormat} = require('./config/morganFormats');
-const {inReqOptions, getMethodOptions} = require('./config/morganOptions');
+const {reqResBodyFormat, reqBodyFormat} = require('./config/morganFormats');
+const {inReqOptions} = require('./config/morganOptions');
+const cron = require('node-cron');
+const {checkAndRenewSubscription} = require('./services/webhookService');
+
 
 //set up express server
 const app = express();
@@ -24,10 +26,26 @@ app.use(express.json())
 app.use(assignDateTime);
 app.use(assignId);
 app.use(setResponseBody);
+app.use(morgan('dev'));
 app.use(morgan(reqBodyFormat, inReqOptions));
 //app.use(morgan(resBodyFormat, getMethodOptions));
 app.use(cors(corsOptions));
 app.use(helmet());
+
+//// Run subscription check on server startup
+(async () => {
+    await checkAndRenewSubscription('https://1495-190-216-244-150.ngrok-free.app');
+})();
+
+// Schedule the subscription renewal task to run every day at 12:00 AM
+cron.schedule('0 0 * * *', async () => { 
+    try {
+        console.log('Running scheduled subscription renewal...');
+        await checkAndRenewSubscription('https://1495-190-216-244-150.ngrok-free.app');
+    } catch (error) {
+        console.error('Error during scheduled subscription renewal:', error);
+    }
+});
 
 //public accessed files
 app.use('/', express.static(path.join(__dirname, 'public')));
@@ -41,11 +59,16 @@ app.use('/pago-movil', require('./routes/pagoMovilRoutes'));
 //credicard
 app.use('/credicard', require('./routes/credicardRoutes'));
 
+//outlook webhook
+app.use('/webhook', require('./routes/webhookRoutes'));
+
+//monitorBankEmails().catch(console.error);
+
 //404 for all other non-specified routes
 app.all('*', (req, res)=>{
     res.status(404);
     if(req.accepts('html')){
-        res.sendFile(path.join(__dirname, 'views', '404.html'));
+        res.sendFile(path.join(__dirname, 'views', '404.html'));                                                                                                                                                
     } else if (req.accepts('json')){
         res.json({message: '404 Not Found'});
     } else {
