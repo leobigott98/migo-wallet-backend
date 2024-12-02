@@ -2,7 +2,7 @@ const {client} = require('../config/redisConn');
 
 const saveMSALToken = async(token)=>{
     try{
-        await client.set('msal_auth_token', token, { EX: 3600});
+        await client.set('msal_auth_token', token, { EX: 1800});
         console.log('MSAL Token stored in Redis with expiration');
     }catch(err){
         console.log(`Error storing MSAL token in Redis: ${err}`);
@@ -18,10 +18,12 @@ const getToken = async()=>{
         }else{
             //Token expired or not found; handle re-authentication
             console.log('MSAL Token expired, re-authenticating...');
+            return null;
         }
     }catch(err){
         console.log('Error retrieving from Redis:', err);
         logEvents(`Error retrieving from Redis: ${err}`, errLog.log);
+        return null;
     }
 }
 

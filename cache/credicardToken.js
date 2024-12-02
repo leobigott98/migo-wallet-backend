@@ -2,7 +2,7 @@ const {client} = require('../config/redisConn');
 
 const saveCCRToken = async(token)=>{
     try{
-        await client.set('ccr_auth_token', token, { EX: 3600});
+        await client.set('ccr_auth_token', token, { EX: 3599});
         console.log('CCR Token stored in Redis with expiration');
     }catch(err){
         console.log(`Error storing CCR token in Redis: ${err}`);
