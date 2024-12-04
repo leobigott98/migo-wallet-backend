@@ -1,8 +1,8 @@
 const {client} = require('../config/redisConn');
 
-const savePMToken = async(token)=>{
+const savePMToken = async(token, expiration)=>{
     try{
-        await client.set('pm_auth_token', token, { EX: 3600});
+        await client.set('pm_auth_token', token, { EX: expiration});
         console.log('PM Token stored in Redis with expiration');
     }catch(err){
         console.log(`Error storing PM token in Redis: ${err}`);

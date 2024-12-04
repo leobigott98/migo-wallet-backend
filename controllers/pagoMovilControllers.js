@@ -29,7 +29,8 @@ const authenticate = asyncHandler(async ()=>{
         logEvents(`reqURL: ${process.env.PM_TOKEN_URL} \treqBody: ${JSON.stringify(data)} \tresData: ${JSON.stringify(response.data)}`, 'pagoMovilLog.log')
         if(response.status == 200){
             const authToken = response.data.access_token;
-            await savePMToken(authToken);
+            const expiration = response.data.expires_in;
+            await savePMToken(authToken, expiration);
             return authToken;
         }
         else throw new Error(`status: ${response.status} \tmessage: ${response.data}`)

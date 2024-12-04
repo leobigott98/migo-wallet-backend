@@ -34,14 +34,14 @@ app.use(helmet());
 
 //// Run subscription check on server startup
 (async () => {
-    await checkAndRenewSubscription('https://1495-190-216-244-150.ngrok-free.app');
+    await checkAndRenewSubscription(process.env.SERVER_URL);
 })();
 
 // Schedule the subscription renewal task to run every day at 12:00 AM
 cron.schedule('0 0 * * *', async () => { 
     try {
         console.log('Running scheduled subscription renewal...');
-        await checkAndRenewSubscription('https://1495-190-216-244-150.ngrok-free.app');
+        await checkAndRenewSubscription(process.env.SERVER_URL);
     } catch (error) {
         console.error('Error during scheduled subscription renewal:', error);
     }

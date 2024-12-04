@@ -157,16 +157,14 @@ const checkAndRenewSubscription = async(notificationUrl)=> {
             // Update if notificationUrl changed or if there is less than a day left
             if (subscriptionData.notificationUrl !== (notificationUrl + '/webhook/outlook') || subscriptionTimeLeft < 1 ){ 
                 if(subscriptionData.notificationUrl !== (notificationUrl + '/webhook/outlook'))
-                    console.log(`Subscription has ${subscriptionTimeLeft.toFixed(2)} days left. Updating...`);
+                    console.log(`Subscription url ${subscriptionData.notificationUrl} is different from ${notificationUrl + '/webhook/outlook'}. Updating...`)    
                 else if(subscriptionTimeLeft < 1)
-                    console.log(`Subscription url ${subscriptionData.notificationUrl} is different from ${notificationUrl + '/webhook/outlook'}. Updating...`)
+                    console.log(`Subscription has ${subscriptionTimeLeft.toFixed(2)} days left. Updating...`);
                 
                 const subscriptionId = subscriptionData.id;
 
                 //Renew the subscription
                 const subscriptionUpdateResponse = await renewSubscription(notificationUrl, expirationDateTime, subscriptionId);
-                console.log(`Subscription update: ${JSON.stringify(subscriptionUpdateResponse)}`);
-                logEvents(`Subscription update: ${JSON.stringify(subscriptionUpdateResponse)}`, 'graphAPILog.log');
                 return subscriptionUpdateResponse;
             }else{
                 console.log(`Subscription is valid for ${subscriptionTimeLeft.toFixed(2)} days. No update needed.`);
