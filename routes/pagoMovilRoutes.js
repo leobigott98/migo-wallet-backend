@@ -6,12 +6,12 @@ router.route('/listarBancos')
     .get(pagoMovilControllers.getAllBanks)
 
 router.route('/consultaB2P')
-    .post(pagoMovilControllers.queryPaymentB2P)
+    .post(pagoMovilControllers.topUpB2P)
 
 router.route('/C2P')
-    .post(pagoMovilControllers.C2P)
+    .post(pagoMovilControllers.topUpC2P)
 
 router.route('/enviarB2P')
-    .post(pagoMovilControllers.sendPaymentB2P)
+    .post(pagoMovilControllers.withdrawB2P)
 
 module.exports = router

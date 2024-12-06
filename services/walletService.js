@@ -18,6 +18,7 @@ const topUpWallet = async (walletID, amount, method, dateTime) => {
     // Make a query to Call the SP
     const response = await transactionSim(walletID, amount, dateTime);
     console.log(response);
+    return response
     //const dbResponse = await promisePool.query('CALL SP_NAME(?,?,?,?)', [walletID, amount, method, dateTime]);
     //console.log(dbResponse);
   } catch (err) {
