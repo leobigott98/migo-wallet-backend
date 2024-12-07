@@ -1,5 +1,4 @@
 const axios = require("axios");
-const asyncHandler = require("express-async-handler");
 const { logEvents } = require("../middleware/logger");
 const { savePMToken, getToken } = require("../cache/pagoMovilToken");
 

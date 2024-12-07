@@ -1,101 +1,41 @@
-const {createSubscription, fetchEmailContent, renewSubscription} = require('./webhookService');
-const simpleParser = require('mailparser').simpleParser;
+// Import dependencies
+const {topUpWallet} = require('../services/walletService');
 
-function processEmail(email) {
-    const isValid = email.from === 'no.reply.alerts@chase.com' && email.subject.includes('Zelle®');
-    if (!isValid) return logError(email);
+// Function to process the email
+async function processEmail(email) {
+    try{
+        // Validate the sender
+        const isValid = email.from.emailAddress.address === 'no.reply.alerts@chase.com' && email.subject.includes('Zelle®');
+        if (!isValid) throw new Error('Not valid email');
 
-    const amount = extractAmount(email.body);
-    const walletID = extractWalletID(email.body);
+        // Check amount and wallet id
+        const amount = extractAmount(email.body.content);
+        const walletID = extractWalletID(email.body.content);
 
-    if (amount && walletID) {
-        callWalletService(walletID, amount);
+        if (amount && walletID) {
+            dbResponse = await topUpWallet(walletID, amount, 'ZELLE', email.sentDateTime);
+            console.log(dbResponse);
+        } else {
+            throw new Error('Failed to extract required fields.');
+        }
+
+
+    }catch(err){
+        console.log('There was an error processing the email:', err)
+        return null;
     }
 }
 
+// Extract the zelle amount from the email body
 function extractAmount(body) {
-    const match = body.match(/\$([\d,]+.\d{2})/);
-    return match ? parseFloat(match[1].replace(",", "")) : null;
+    const match = body.match(/\$([\d,]+\.\d{2})/);
+    return match ? parseFloat(match[1].replace(',', '')) : null;
 }
 
+// Extract the wallet ID from the zelle memo
 function extractWalletID(body) {
-    const match = body.match(/Wallet ID:\s*(\d+)/);
+    const match = body.match(/Memo:\s(\w+)/);
     return match ? match[1] : null;
 }
 
-function fetchAndProcessEmail(seqNo) {
-    const f = imap.seq.fetch(seqNo, { bodies: ["HEADER.FIELDS (FROM SUBJECT)", "TEXT"] });
-    f.on("message", (msg) => {
-        msg.on("body", (stream) => {
-            streamToString(stream).then(processEmail);
-        });
-    });
-}
-
-function addMoneyToWallet(walletID, amount) {
-    if (!isValidWallet(walletID)) {
-        console.error("Invalid Wallet ID:", walletID);
-        return;
-    }
-    if (amount <= 0) {
-        console.error("Invalid Amount:", amount);
-        return;
-    }
-
-    // Logic to update wallet balance
-    updateWalletBalance(walletID, amount)
-        .then(() => console.log("Wallet updated successfully"))
-        .catch((err) => console.error("Failed to update wallet:", err));
-}
-
-// Extract the amount and wallet ID
-const body = email.text || email.html || '';
-const amount = extractAmount(body);
-const walletID = extractWalletID(body);
-
-if (amount && walletID) {
-    await callWalletService(walletID, amount);
-    console.log('Successfully processed email:', email.envelope.subject);
-} else {
-    console.log('Failed to extract required fields.');
-}
-
-function extractAmount(body) {
-const match = body.match(/\$([\d,]+\.\d{2})/);
-return match ? parseFloat(match[1].replace(',', '')) : null;
-}
-
-function extractWalletID(body) {
-const match = body.match(/Wallet ID:\s*(\d+)/);
-return match ? match[1] : null;
-}
-
-
-
-
-    try {
-
-            // Check if email is from the bank
-            if (parsed.from.text.includes("bank@example.com")) {
-                // Extract transfer memo (wallet ID) and amount
-                const memoMatch = parsed.text.match(/Memo:\s(\w+)/);
-                const amountMatch = parsed.text.match(/Amount:\s\$([\d,]+\.\d{2})/);
-
-                if (memoMatch && amountMatch) {
-                    const walletId = memoMatch[1];
-                    const amount = parseFloat(amountMatch[1].replace(/,/g, ''));
-
-                    // Update wallet balance (replace with your function)
-                    await updateWalletBalance(walletId, amount);
-                    console.log(`Credited $${amount} to wallet ${walletId}`);
-                }
-            }
-
-    } catch (error) {
-        console.error('Error during email check:', error);
-    } 
-
-async function updateWalletBalance(walletId, amount) {
-    // Placeholder function - replace with actual API call or database update
-    console.log(`Updating wallet ${walletId} with amount ${amount}`);
-}
+module.exports = {processEmail};
