@@ -52,11 +52,15 @@ const topUpB2P = asyncHandler(async(req, res)=>{
 //@desc Top Up with Pago Movil C2P
 const topUpC2P = asyncHandler(async(req, res)=>{
     const pmResponse = await C2P(req);
-    if(pmResponse){
+    if(pmResponse.codigoError === 0){
         const dbResponse = await topUpWallet(req.body.walletID, req.body.monto, 'PAGO MOVIL C2P', req.dateTime);
         if(dbResponse){
             res.status(200).send({message: 'success', data: dbResponse})
+        }else{
+            res.status(400).send({message: 'Ocurrió en error en la recarga. Contacte a soporte', data: null})
         }
+    }else{
+        res.status(400).send({message: 'Ocurrió un error en la recarga', data: null})
     }
 });
 

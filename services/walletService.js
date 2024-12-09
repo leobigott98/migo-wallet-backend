@@ -1,4 +1,5 @@
 const pool = require("../config/dbConn");
+const { logEvents } = require("../middleware/logger");
 
 // Create a promisePool to use asyn/await for database async operations
 const promisePool = pool.promise();
@@ -23,11 +24,21 @@ async function updateWalletBalance(walletID, amount, method, dateTime) {
   // Database update
   try {
     console.log(`Updating wallet ${walletID} with amount ${amount}`);
+
+    // AGREGAR SP AQUÍ
     const dbResponse = await promisePool.query('CALL SP_NAME(?,?,?,?)', [walletID, amount, method, dateTime]);
+
+    //Logging
+    logEvents(`DB Balance Update: ${dbResponse} \tParameters: ${walletID} ${amount} ${method} ${dateTime}`, 'dbLog.Log');
     console.log(dbResponse);
     console.log(`Credited $${amount} to wallet ${walletID}`);
+
+    //return response
     return dbResponse;
+
   } catch (error) {
+    //loggint
+    logEvents(`DB Balance Update Error: ${error} \tParameters: ${walletID} ${amount} ${method} ${dateTime}`, 'dbErrorLog.Log');
     return error;
   }
 }
@@ -49,12 +60,12 @@ const topUpWallet = async (walletID, amount, method, dateTime) => {
     }
 
      // Logic to update wallet balance
-        /* const updateResult = await updateWalletBalance(walletID, amount);
+         /* const updateResult = await updateWalletBalance(walletID, amount);
         if(updateResult.status === 'success'){
           return "Wallet updated successfully"
         }else{
           return `Failed to update wallet: ${err}`
-        } */
+        }  */
 
     const response = await transactionSim(walletID, amount, dateTime);
     console.log(response);
