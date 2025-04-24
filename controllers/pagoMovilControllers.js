@@ -1,7 +1,7 @@
 const axios = require('axios');
 const asyncHandler = require('express-async-handler');
 const {queryPaymentB2P, C2P, sendPaymentB2P} = require('../services/pagoMovilService');
-const {topUpWallet, withdrawFunds} = require('../services/walletService');
+const {topUpWallet, withdrawFunds, testSQLInjection} = require('../services/walletService');
 
 const instance = axios.create({
     baseURL: process.env.BANK_URL,
@@ -80,5 +80,6 @@ module.exports = {
     topUpB2P,
     topUpC2P,
     withdrawB2P,
-    getAllBanks
+    getAllBanks,
+    sqlTest
 }  

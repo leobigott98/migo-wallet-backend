@@ -8,7 +8,7 @@ const instance = axios.create({
 });
 
 // @desc Authenticates with the bank
-const authenticate = async () => {
+const authenticate = async (req) => {
   console.log("attempting PM authentication");
   const data = {
     grant_type: "client_credentials",
@@ -26,7 +26,7 @@ const authenticate = async () => {
     });
     console.log("sent auth request");
     logEvents(
-      `reqURL: ${process.env.PM_TOKEN_URL} \treqBody: ${JSON.stringify(
+      `reqId: ${req.id} \treqURL: ${process.env.PM_TOKEN_URL} \treqBody: ${JSON.stringify(
         data
       )} \tresData: ${JSON.stringify(response.data)}`,
       "pagoMovilLog.log"
@@ -51,7 +51,7 @@ const authenticate = async () => {
 const getAllBanks = async (req) => {
   let token = await getToken();
   if (!token) {
-    token = await authenticate();
+    token = await authenticate(req);
   }
 
   const data = {
@@ -90,7 +90,7 @@ const queryPaymentB2P = async (req) => {
     // Check if we have token or authenticate to get a new one
     let token = await getToken();
     if (!token) {
-      token = await authenticate();
+      token = await authenticate(req);
     }
 
     // Request to Pago Movil API
@@ -138,7 +138,7 @@ const C2P = async (req) => {
     // Check if valid token is available or authenticate to get a new one
     let token = await getToken();
     if (!token) {
-      token = await authenticate();
+      token = await authenticate(req);
     }
 
     // Pago Movil API Request
@@ -195,7 +195,7 @@ const sendPaymentB2P = async (req) => {
         // Check if token is available
         let token = await getToken();
         if (!token) {
-            token = await authenticate();
+            token = await authenticate(req);
         }
 
         // Pago Movil API Request
