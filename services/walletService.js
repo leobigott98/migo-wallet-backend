@@ -1,8 +1,6 @@
-const pool = require("../config/dbConn");
+const {promisePool} = require("../config/dbConn");
 const { logEvents } = require("../middleware/logger");
-
-// Create a promisePool to use asyn/await for database async operations
-const promisePool = pool.promise();
+const { isValidEmail, isValidID, isValidReference, isValidWallet, isValidname } = require('../utils/stringValidation')
 
 // Simulate a promise for testing purposes
 const transactionSim = async (walletID, amount, dateTime) => {
@@ -13,38 +11,99 @@ const transactionSim = async (walletID, amount, dateTime) => {
   });
 };
 
-// Function to check if wallet ID is a 12 digit string
-const isValidWallet = (walletID)=>{
-  const regex = /^[\d]{12}$/;
-  return regex.test(walletID);
-}
 
 // Function to update wallet balance in Database
-async function updateWalletBalance(walletID, amount, method, dateTime) {
+async function updateWalletBalance(userID, accID, requestID, amount, transactionTypeId, methodId, coinCode, reference) {
   // Database update
   try {
-    console.log(`Updating wallet ${walletID} with amount ${amount}`);
+    console.log(`Updating wallet of user ${userID} with amount ${amount}`);
 
-    // AGREGAR SP AQUÍ
-    const dbResponse = await promisePool.query('CALL SP_NAME(?,?,?,?)', [walletID, amount, method, dateTime]);
+    // Call SP to Add Money to wallet
+    const dbResponse = await promisePool.query('CALL SP_NAME(?,?,?,?,?,?,?,?)', [userID, accID, requestID, transactionTypeId, amount, methodId, coinCode, reference]);
 
     //Logging
-    logEvents(`DB Balance Update: ${dbResponse} \tParameters: ${walletID} ${amount} ${method} ${dateTime}`, 'dbLog.Log');
+    logEvents(`DB Balance Update: ${dbResponse} \tParameters: ${userID} ${accID} ${requestID} ${amount} ${transactionTypeId} ${methodId} ${coinCode} ${reference}`, 'dbLog.Log');
     console.log(dbResponse);
-    console.log(`Credited $${amount} to wallet ${walletID}`);
+    console.log(`Credited $${amount} to user ${userID}`);
 
     //return response
     return dbResponse;
 
   } catch (error) {
     //loggint
-    logEvents(`DB Balance Update Error: ${error} \tParameters: ${walletID} ${amount} ${method} ${dateTime}`, 'dbErrorLog.Log');
+    logEvents(`DB Balance Update Error: ${error} \tParameters: ${walletID} ${amount} ${methodId} ${dateTime}`, 'dbErrorLog.Log');
     return error;
   }
 }
 
 // Function to Add Money to Wallet
-const topUpWallet = async (walletID, amount, method, dateTime) => {
+const topUpWallet = async (userID, accID, requestID, amount, transactionTypeId, methodId, coinCode, reference) => {
+  try {
+
+    // Validate Amount
+    if (amount <= 0) {
+        console.error("Invalid Amount:", amount);
+        throw new Error("Invalid Amount:", amount);
+    }
+
+    // Validate Request ID
+    if (!isValidID(requestID)) {
+      console.error("Invalid Request ID:", requestID);
+      throw new Error("Invalid Request ID:", requestID);
+  }
+
+    // Validate Account ID
+    if (!isValidID(userID)) {
+      console.error("Invalid User ID:", userID);
+      throw new Error("Invalid User ID:", userID);
+  }
+
+  // Validate User ID
+  if (!isValidID(accID)) {
+    console.error("Invalid Account ID:", accID);
+    throw new Error("Invalid Account ID:", accID);
+}
+
+  // Validate transactionTypeId
+  if (transactionTypeId <= 0 || transactionTypeId >=7){
+    console.error("Invalid Transaction Type ID:", transactionTypeId);
+    throw new Error("Invalid Transaction Type ID:", transactionTypeId);
+  }
+
+  // Validate MethodId
+  if (methodId <= 0 || methodId >=8){
+    console.error("Invalid Method ID:", methodId);
+    throw new Error("Invalid Method ID:", methodId);
+  }
+
+  // Validate CoinCode
+  if (!coinCode === 926 && !coinCode === 840){
+    console.error("Invalid CoinCode:", coinCode);
+    throw new Error("Invalid CoinCode:", coinCode);
+  }
+
+  // Validate Reference
+  if(!isValidReference){
+    console.error("Invalid Reference:", reference);
+    throw new Error("Invalid Reference:", reference);
+  }
+
+  // Logic to update wallet balance
+  const updateResult = await updateWalletBalance(userID, accID, requestID, amount, transactionTypeId, methodId, coinCode, reference);
+  if(updateResult.status === 'success'){
+    return "Wallet updated successfully"
+  }else{
+    return `Failed to update wallet: ${err}`
+  } 
+    
+  } catch (err) {
+    console.log(`Error Topping-Up: ${err}`);
+    return null;
+  }
+};
+
+// Function to Withdraw funds from Wallet
+const withdrawFunds = async (walletID, amount, methodId, dateTime) => {
   try {
 
     // Validate Wallet
@@ -59,31 +118,10 @@ const topUpWallet = async (walletID, amount, method, dateTime) => {
         throw new Error("Invalid Amount:", amount);
     }
 
-     // Logic to update wallet balance
-         /* const updateResult = await updateWalletBalance(walletID, amount);
-        if(updateResult.status === 'success'){
-          return "Wallet updated successfully"
-        }else{
-          return `Failed to update wallet: ${err}`
-        }  */
-
-    const response = await transactionSim(walletID, amount, dateTime);
-    console.log(response);
-    return response;
-    
-  } catch (err) {
-    console.log(`Error Topping-Up: ${err}`);
-    return null;
-  }
-};
-
-// Function to Withdraw funds from Wallet
-const withdrawFunds = async (walletID, amount, method, dateTime) => {
-  try {
     // Make a query to Call the SP
     const response = await transactionSim(walletID, amount, dateTime);
     console.log(response);
-    //const dbResponse = await promisePool.query('CALL SP_NAME(?,?,?,?)', [walletID, amount, method, dateTime]);
+    //const dbResponse = await promisePool.query('CALL SP_NAME(?,?,?,?)', [walletID, amount, methodId, dateTime]);
     //console.log(dbResponse);
   } catch (err) {
     console.log(`Error Withdrawing Funds: ${err}`);
@@ -93,6 +131,24 @@ const withdrawFunds = async (walletID, amount, method, dateTime) => {
 // Function to Transfer funds between two wallets
 const transferFunds = async (senderID, recipientID, amount, dateTime) => {
   try {
+    // Validate Sender Wallet
+    if (!isValidWallet(senderID)) {
+      console.error("Invalid Sender Wallet ID:", senderID);
+      throw new Error("Invalid Sender Wallet ID:", senderID);
+    }
+
+    // Validate Recipient Wallet
+    if (!isValidWallet(recipientID)) {
+      console.error("Invalid Recipient Wallet ID:", recipientID);
+      throw new Error("Invalid Recipient Wallet ID:", recipientID);
+    }
+
+    // Validate Amount
+    if (amount <= 0) {
+        console.error("Invalid Amount:", amount);
+        throw new Error("Invalid Amount:", amount);
+    }
+
     // Make a query to Call the SP
     const response = await transactionSim(senderID, amount, dateTime);
     console.log(response);
