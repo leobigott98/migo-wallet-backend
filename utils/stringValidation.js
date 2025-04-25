@@ -31,4 +31,9 @@ const isValidWallet = (walletID) => {
   return regex.test(walletID);
 };
 
-module.exports = { isValidEmail, isValidname, isValidID, isValidReference, isValidWallet };
+const isValidOTP = (otp) => {
+  const regex = /^[\d]{8}$/;
+  return regex.test(otp);
+};
+
+module.exports = { isValidEmail, isValidname, isValidID, isValidReference, isValidWallet, isValidOTP };

@@ -7,7 +7,7 @@ const morgan = require('morgan');
 const corsOptions = require('./config/corsOptions');
 const path = require('path')
 const PORT = process.env.PORT || 3500;
-const pool = require('./config/dbConn');
+const {pool} = require('./config/dbConn');
 const {logEvents, assignDateTime, assignId, setResponseBody} = require('./middleware/logger');
 const {reqResBodyFormat, reqBodyFormat} = require('./config/morganFormats');
 const {inReqOptions} = require('./config/morganOptions');
@@ -32,7 +32,7 @@ app.use(morgan(reqBodyFormat, inReqOptions));
 app.use(cors(corsOptions));
 app.use(helmet());
 
-//// Run subscription check on server startup
+/* //// Run subscription check on server startup
 (async () => {
     await checkAndRenewSubscription(process.env.SERVER_URL);
 })();
@@ -45,7 +45,7 @@ cron.schedule('0 0 * * *', async () => {
     } catch (error) {
         console.error('Error during scheduled subscription renewal:', error);
     }
-});
+}); */
 
 //public accessed files
 app.use('/', express.static(path.join(__dirname, 'public')));
@@ -61,6 +61,9 @@ app.use('/credicard', require('./routes/credicardRoutes'));
 
 //outlook webhook
 app.use('/webhook', require('./routes/webhookRoutes'));
+
+//auth routes
+app.use('/auth', require('./routes/authRoutes'));
 
 //monitorBankEmails().catch(console.error);
 
@@ -78,7 +81,7 @@ app.all('*', (req, res)=>{
 
 app.use(morgan(reqResBodyFormat, inReqOptions));
 
-pool.getConnection((err, connection)=>{
+/* pool.getConnection((err, connection)=>{
     if(err instanceof Error){
         console.log('pool.getConnection error:', err);
         logEvents(`${err.name}: ${err.code}\t${err.errno}\t${err.message}`, 'MySQLErrLog.log')
@@ -91,4 +94,20 @@ pool.addListener("connection", ()=>{
     app.listen(PORT, ()=>{
         console.log(`Listening on PORT ${PORT}`)
     })
-})
+}) */
+
+    // Handle database connection errors
+pool.getConnection((err, connection) => {
+    if (err) {
+        console.log('pool.getConnection error:', err);
+        logEvents(`${err.name}: ${err.code}\t${err.errno}\t${err.message}`, 'MySQLErrLog.log');
+        return;
+    }
+    console.log('Connected to DB');
+    connection.release(); // Release the connection back to the pool
+});
+
+// Start the server **without using an event listener**
+app.listen(PORT, () => {
+    console.log(`Server is running on PORT ${PORT}`);
+});
