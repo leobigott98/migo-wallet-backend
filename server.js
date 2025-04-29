@@ -65,6 +65,9 @@ app.use('/webhook', require('./routes/webhookRoutes'));
 //auth routes
 app.use('/auth', require('./routes/authRoutes'));
 
+//payall routes
+app.use('/payall', require('./routes/payallRoutes'));
+
 //monitorBankEmails().catch(console.error);
 
 //404 for all other non-specified routes
