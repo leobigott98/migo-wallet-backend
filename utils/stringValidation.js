@@ -32,7 +32,7 @@ const isValidWallet = (walletID) => {
 };
 
 const isValidOTP = (otp) => {
-  const regex = /^[\d]{8}$/;
+  const regex = /^[\d]{6}$/;
   return regex.test(otp);
 };
 

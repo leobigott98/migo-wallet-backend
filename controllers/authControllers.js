@@ -1,7 +1,7 @@
 const { isValidEmail, isValidname, isValidOTP } = require("../utils/stringValidation");
 const { createUserInAuthServer, loginUser, refreshAuthToken, emailVerification, resendOTP, requestPasswordReset } = require('../services/authService');
 const {logEvents} = require('../middleware/logger');
-const {createUserInDB} = require('../services/authService');
+const {createUserInDB, getUserByEmail} = require('../services/userService');
 const axios = require('axios');
 
 const signUp = async (req, res)=>{
@@ -33,7 +33,7 @@ const signUp = async (req, res)=>{
 
         // Create User in Wallet DB
         const dbResponse = await createUserInDB(email, name, lastname);
-        if(!dbResponse.response) {
+        if(!dbResponse || dbResponse.error){
             console.log("Error creating user in DB:", dbResponse);
             return res.status(400).json({message: 'Error creating user in DB'});
         }
@@ -88,6 +88,37 @@ const refreshToken = async(req,res)=>{
         console.error('Error refreshing token:', err.message);
         res.status(500).json({error: 'Internal Server Error', message: err.message});
         
+    }
+}
+
+const getUserInfo = async (req, res) => {
+    try {
+        const userEmail = req.user.email; // Extract email from the authenticated user
+
+        // If the email is not provided or invalid, return a 400 Bad Request response
+        if (!userEmail) {
+            return res.status(400).json({ message: 'Email not provided' });
+        }
+        // Check if the email format is valid using a utility function
+        if (!isValidEmail(userEmail)) {
+            return res.status(400).json({ message: 'Invalid email format' });
+        }
+
+        /* // Fetch user information from the database using the userService
+        const userInfo = await getUserByEmail(userEmail);  */
+
+        /* // If the user information is not found, return a 404 Not Found response
+        if (!userInfo) {
+            return res.status(404).json({ message: 'User not found' });
+        } */
+
+        /* console.log('User information:', userInfo); // Log the user information for debugging */
+
+        // Return the user information in the response with a 200 OK status
+        res.status(200).json({ email: userEmail, name: req.user.name, lastname: req.user.lastname, verified_email: req.user.verified_email });
+    } catch (error) {
+        console.error('Error fetching user info:', error.message);
+        res.status(500).json({ error: 'Internal Server Error', message: error.message });
     }
 }
 
@@ -164,5 +195,5 @@ const resetPassword = async (req, res) =>{
     }
 }
 
-module.exports = {signUp, signIn, verifyEmail, sendOTP, refreshToken, resetPassword};
+module.exports = {signUp, signIn, verifyEmail, sendOTP, refreshToken, resetPassword, getUserInfo};
 

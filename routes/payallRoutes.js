@@ -175,4 +175,40 @@ router.post('/getTasa', async (req, res) => {
     }
 });
 
+router.post('/recargaTelefono', async (req, res) => {
+    try {
+        const { operadora, producto, numero, monto } = req.body;
+        if (!operadora || !producto || !numero || !monto ) {
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
+        const response = await payallService.recargaTelefono(operadora, producto, numero, monto);
+        if (!response) {
+            return res.status(400).json({ message: 'Error in recargaTelefono' });
+        }
+        res.status(200).json({ response });
+        
+    } catch (error) {
+        console.error('Error in recargaTelefono:', error.message);
+        res.status(500).json({ error: 'Internal Server Error', message: error.message });
+    }
+});
+
+router.post('/recargaInter', async (req, res) => {
+    try {
+        const { operadora, producto, numero, monto } = req.body;
+        if (!operadora || !producto || !cedula || !monto) {
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
+        const response = await payallService.recargaInter(operadora, producto, numero, monto);
+        if (!response) {
+            return res.status(400).json({ message: 'Error in recargaInter' });
+        }
+        res.status(200).json({ response });
+        
+    } catch (error) {
+        console.error('Error in recargaInter:', error.message);
+        res.status(500).json({ error: 'Internal Server Error', message: error.message });
+    }
+});
+
 module.exports = router;

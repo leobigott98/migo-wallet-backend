@@ -52,7 +52,7 @@ async function recargaTelefono(operadora, producto, numero, monto) {
 }
 
 async function recargaInter(operadora, producto, numero, monto) {
-    return recargaBase('recargar', operadora, producto, numero, monto);
+    return recargaBase('recargarInter', operadora, producto, numero, monto);
 }
 
 async function saldoCuenta() {

@@ -12,6 +12,18 @@ const transactionSim = async (walletID, amount, dateTime) => {
 };
 
 
+async function getWalletByEmail(email) {
+  try {
+      const response = await promisePool.query('CALL sp_get_info_v1(?)', [email]);
+      return response;
+  } catch (err) {
+      logEvents(`Error fetching user ${email}: ${err.message}`, 'MySQLErrLog.log');
+      throw err; // Rethrow the error for further handling
+  }
+};
+
+
+
 // Function to update wallet balance in Database
 async function updateWalletBalance(userID, accID, requestID, amount, transactionTypeId, methodId, coinCode, reference) {
   // Database update
@@ -159,4 +171,15 @@ const transferFunds = async (senderID, recipientID, amount, dateTime) => {
   }
 };
 
-module.exports = { topUpWallet, transferFunds, withdrawFunds };
+const getAccountStatusByUserId = async (user_id, coin_id) => {
+  try {
+    const oper = 3; // constant value for the stored procedure
+    const result = await promisePool.query('CALL sp_get_status(?, ?, ?)', [user_id, oper, coin_id]);
+    return result[0][0][0];
+  } catch (err) {
+    logEvents(`Error fetching wallet status for user ${user_id}: ${err.message}`, 'MySQLErrLog.log');
+    return { error: err.message };
+  }
+};
+
+module.exports = { topUpWallet, transferFunds, withdrawFunds, getWalletByEmail, getAccountStatusByUserId };

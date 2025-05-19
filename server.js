@@ -6,7 +6,7 @@ const helmet = require( 'helmet');
 const morgan = require('morgan');
 const corsOptions = require('./config/corsOptions');
 const path = require('path')
-const PORT = process.env.PORT || 3500;
+const PORT = process.env.SERVER_PORT || 3500;
 const {pool} = require('./config/dbConn');
 const {logEvents, assignDateTime, assignId, setResponseBody} = require('./middleware/logger');
 const {reqResBodyFormat, reqBodyFormat} = require('./config/morganFormats');
@@ -67,6 +67,9 @@ app.use('/auth', require('./routes/authRoutes'));
 
 //payall routes
 app.use('/payall', require('./routes/payallRoutes'));
+
+//wallet routes
+app.use('/wallet', require('./routes/walletRoutes'));
 
 //monitorBankEmails().catch(console.error);
 

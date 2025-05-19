@@ -8,7 +8,7 @@ const publicKey = fs.readFileSync(publicKeyPath, 'utf8');
 
 // Middleware to authenticate JWT tokens
 // This middleware checks for the presence of a JWT in the Authorization header
-const authenticateToken = (req, res, next) => {
+const authenticateJWT = (req, res, next) => {
     // Check for the Authorization header
     if (!req.headers['authorization']) {
         return res.status(401).json({ message: 'Authorization header is missing' });
@@ -29,9 +29,14 @@ const authenticateToken = (req, res, next) => {
         if (err) {
             return res.status(403).json({ message: 'Invalid or expired token' });
         }
-        req.user = user;
+        req.user = {
+            email: user.email,
+            name: user.name,
+            lastname: user.lastname,
+            verified_email: user.verifiedEmail
+        };
         next();
     });
 };
 
-module.exports = authenticateToken;
+module.exports = {authenticateJWT};

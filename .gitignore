@@ -2,3 +2,7 @@ node_modules
 logs
 .env
 keys
+Dockerfile
+compose.yaml
+README.Docker.md
+.dockerignore

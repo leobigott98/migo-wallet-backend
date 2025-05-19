@@ -2,7 +2,7 @@ const redis = require('redis');
 const {logEvents} = require('../middleware/logger');
 
 const client = redis.createClient({ 
-    url: process.env.REDIS_URL,
+    url: `redis://:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
 }); //create client
 
 // Handle connection events
