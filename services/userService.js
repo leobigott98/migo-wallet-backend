@@ -1,4 +1,5 @@
 const { promisePool } = require ("../config/dbConn");
+const { logEvents } = require ("../middleware/logger");
 
 async function createUserInDB (email, name, lastname){
     try {
